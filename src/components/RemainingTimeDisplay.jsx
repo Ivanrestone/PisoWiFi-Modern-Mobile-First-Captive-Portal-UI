@@ -1,23 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { motion } from 'framer-motion'
 import { Clock, Pause } from 'lucide-react'
 
 const RemainingTimeDisplay = ({ remainingTime, isPaused }) => {
-  const [displayTime, setDisplayTime] = useState(remainingTime)
+  const seconds = Math.max(0, Number(remainingTime) || 0)
 
-  useEffect(() => {
-    if (!isPaused) {
-      const interval = setInterval(() => {
-        setDisplayTime(prev => Math.max(0, prev - 1))
-      }, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [isPaused])
-
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
+  const formatTime = (totalSeconds) => {
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const secs = totalSeconds % 60
 
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
@@ -29,8 +20,8 @@ const RemainingTimeDisplay = ({ remainingTime, isPaused }) => {
     <motion.div
       whileHover={{ scale: 1.02 }}
       className={`bg-gradient-to-br rounded-2xl p-6 shadow-lg ${
-        isPaused 
-          ? 'from-orange-100 to-orange-200 border-2 border-orange-300' 
+        isPaused
+          ? 'from-orange-100 to-orange-200 border-2 border-orange-300'
           : 'from-green-100 to-green-200 border-2 border-green-300'
       }`}
     >
@@ -43,17 +34,17 @@ const RemainingTimeDisplay = ({ remainingTime, isPaused }) => {
       </div>
       <div className="text-center">
         <motion.p
-          key={displayTime}
+          key={seconds}
           initial={{ scale: 1.1, opacity: 0.8 }}
           animate={{ scale: 1, opacity: 1 }}
           className={`text-5xl font-bold ${
             isPaused ? 'text-orange-700' : 'text-green-700'
           }`}
         >
-          {formatTime(displayTime)}
+          {formatTime(seconds)}
         </motion.p>
         <p className="text-sm text-gray-600 mt-2">
-          {isPaused 
+          {isPaused
             ? 'Your remaining time is saved and can be resumed later'
             : 'Keep browsing! Your time is counting down'
           }

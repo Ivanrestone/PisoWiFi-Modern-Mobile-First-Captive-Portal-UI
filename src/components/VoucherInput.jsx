@@ -1,20 +1,54 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Ticket, CheckCircle2 } from 'lucide-react'
+import { Ticket, CheckCircle2, AlertCircle } from 'lucide-react'
 
-const VoucherInput = ({ onSubmit }) => {
+const VoucherInput = ({ onSubmit, onError }) => {
   const [voucherCode, setVoucherCode] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (voucherCode.trim()) {
-      setIsSubmitting(true)
-      setTimeout(() => {
-        onSubmit(voucherCode.trim())
+    setError('')
+    
+    if (!voucherCode.trim()) {
+      setError('Please enter a voucher code')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      // Simulate MAC address (in real app, this would come from device)
+      const macAddress = '00:1A:2B:3C:4D:5E'
+      const ipAddress = '192.168.1.100'
+
+      const response = await fetch('http://localhost:3001/api/vouchers/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: voucherCode.trim(),
+          macAddress,
+          ipAddress
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        onSubmit(data.data)
         setVoucherCode('')
-        setIsSubmitting(false)
-      }, 1000)
+      } else {
+        setError(data.message || 'Invalid voucher code')
+        if (onError) onError(data.message)
+      }
+    } catch (err) {
+      setError('Failed to validate voucher. Please try again.')
+      if (onError) onError('Connection error')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -27,12 +61,27 @@ const VoucherInput = ({ onSubmit }) => {
         <input
           type="text"
           value={voucherCode}
-          onChange={(e) => setVoucherCode(e.target.value)}
+          onChange={(e) => {
+            setVoucherCode(e.target.value.toUpperCase())
+            setError('')
+          }}
           placeholder="Enter voucher code"
-          className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all placeholder-gray-400"
+          className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-2xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 outline-none transition-all placeholder-gray-400 uppercase"
           disabled={isSubmitting}
+          maxLength={20}
         />
       </div>
+      
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-xl"
+        >
+          <AlertCircle className="w-5 h-5" />
+          <span className="text-sm">{error}</span>
+        </motion.div>
+      )}
       
       <motion.button
         whileHover={{ scale: 1.02 }}
@@ -64,7 +113,7 @@ const VoucherInput = ({ onSubmit }) => {
 
       <div className="text-center">
         <p className="text-sm text-gray-500">
-          💡 Enter your voucher code to get free internet time
+          💡 Ask the store owner for a voucher code
         </p>
       </div>
     </form>
